@@ -1,0 +1,2 @@
+# requirements for development purposes, update setup.py as needed
+requests>=2.23.0

@@ -9,8 +9,6 @@ setup(name=package_name,
       maintainer_email='joey@zbaseballdata.com',
       packages=find_packages(),
       install_requires=[
-          'schematics==1.1.1',
-          'requests>=2.13.0',
-          'six>=1.11.0,<2',
+          'requests>=2.23.0',
       ],
     )
