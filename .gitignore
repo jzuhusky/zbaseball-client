@@ -1,1 +1,42 @@
 Pipfile*
+
+*.ipynb
+
+# Py.test gen files
+**/__pycache__/
+
+# Files named "raw_data"
+**/raw_data/
+
+**/static/
+
+# This folder
+./nginx/static/
+
+# All static generated files
+./nginx/static/**
+
+# Files named "secrets"
+**/secrets/
+
+# Python Generated Files
+*.py[cod]
+
+# Apple garbage
+.DS_Store
+
+# Docker
+Dockerfile.tmp
+
+# Testing crap
+.inenv
+.env
+.coverage
+.cache/
+
+# Don't check in venvs
+**/venv/
+
+# No dbs
+*.db
+"../zuhusky-baseball/.gitignore" 68L, 719C
