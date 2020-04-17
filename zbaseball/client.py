@@ -2,43 +2,49 @@ import json
 
 import requests
 
+from .exceptions import (
+    APIException,
+    GameNotFoundException,
+    LoginError,
+    PaymentRequiredException,
+)
 
-class AuthenticationError(Exception):
-    pass
 
-
-class ZBaseballClient(object):
+class ZBaseballDataClient(object):
 
     # TODO(joe): make this point to the actual domain
     API_URL = "http://localhost:8000"
 
-    def __init__(self, username, password):
+    def __init__(self, username=None, password=None, anon_user=False):
+        """Init a client, anon users are allowed, but request rate is throttled server side"""
         self._username = username
         self._password = password
         self._token = None
         self._session = requests.Session()
-        self._session.headers.update({"Content-Type": "application/json"})
-        self._login()
+        self._session.headers.update({
+            "Accept": "application/json",
+        })
+        if not anon_user:
+            self._login()
 
     def _login(self):
         """Use credentials to receive a new api token"""
         login_endpoint = self.API_URL + "/api/auth/login/"
         response = self._session.post(
             url=login_endpoint,
-            data=json.dumps({"username": self._username, "password": self._password}),
+            data={"username": self._username, "password": self._password},
         )
         if response.status_code == 200:
             token = response.json()["token"]
             self._session.headers.update({"Authorization": "Token {}".format(token)})
         else:
-            print(response.__dict__)
             msg = response.json()["msg"]
-            raise AuthenticationError(msg)
+            raise LoginError(msg)
 
     def _logout(self):
         """Indicate to the API we are done with our current token"""
         login_endpoint = self.API_URL + "/api/auth/logout/"
-        response = self._session.post(url=login_endpoint)
+        self._session.post(url=login_endpoint)
         del self._session.headers["Authorization"]
 
     def get_game(self, game_id):
@@ -52,8 +58,28 @@ class ZBaseballClient(object):
         """
         game_endpoint = self.API_URL + "/api/v1/games/{}/".format(game_id)
         response = self._session.get(url=game_endpoint)
-        if response.status_code != 200:
-            raise Exception()
+        if response.status_code == 404:
+            raise GameNotFoundException(response.json()["detail"])
+        elif response.status_code != 200:
+            msg = "Received HTTP status {} when fetching game_id={}".format(
+                response.status_code, game_id
+            )
+            raise APIException(msg)
+        return response.json()
+
+    def list_game_events(self, game_id):
+        """Get a list of play-by-play events for a specific game"""
+        game_endpoint = self.API_URL + "/api/v1/games/{}/events/".format(game_id)
+        response = self._session.get(url=game_endpoint)
+        if response.status_code == 404:
+            raise GameNotFoundException(response.json()["detail"])
+        elif response.status_code == 403:
+            raise PaymentRequiredException(response.json()["detail"])
+        elif response.status_code != 200:
+            msg = "Received HTTP status {} when fetching events for game_id={}".format(
+                response.status_code, game_id
+            )
+            raise APIException(msg)
         return response.json()
 
     def list_games(self, year=None, team_id=None):
@@ -81,7 +107,16 @@ class ZBaseballClient(object):
             "home_team" and "away_team" are the UNIQUE team identifiers. Details about
             a team can be found using the teams API or the "list_teams" client method.
         """
+        filters = []
+        if year:
+            filters.append("year={}".format(year))
+        if team_id:
+            filters.append("team-id={}".format(team_id))
+
         games_endpoint = self.API_URL + "/api/v1/games/"
+        if len(filters) > 0:
+            games_endpoint += "?" + "&".join(filters)
+
         response = self._session.get(url=games_endpoint)
         if response.status_code != 200:
             raise Exception()

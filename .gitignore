@@ -2,6 +2,8 @@ Pipfile*
 
 *.ipynb
 
+.idea/**
+
 # Py.test gen files
 **/__pycache__/
 
