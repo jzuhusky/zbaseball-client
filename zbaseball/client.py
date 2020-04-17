@@ -122,10 +122,12 @@ class ZBaseballDataClient(object):
         if response.status_code != 200:
             raise Exception()
         data = response.json()
-        while len(data["results"]) > 0:
+        while True:
             for game in data["results"]:
                 yield game
             next_url = data["next"]
+            if next_url is None:
+                break
             response = self._session.get(url=next_url)
             data = response.json()
 
@@ -146,3 +148,37 @@ class ZBaseballDataClient(object):
             player_data["debut"], "%Y-%m-%d"
         ).date()
         return player_data
+
+    def list_players(self, search=None):
+        """List players
+
+        Args:
+            search: str | None, an optional parameter that you can search for players
+            on. The search term will return players with either first-names, last-names
+            or retro_ids that are "LIKE" (read startswith) the search term.
+
+        Returns:
+            a generator of player-dict/objects, where each dict has first-name, last-name
+            unique "retro_id" and the player's MLB debut.
+        """
+        player_endpoint = self.API_URL + "/api/v1/players/"
+        if search:
+            search.replace(" ", "%20")
+            player_endpoint += "?search={}".format(search)
+
+        response = self._session.get(url=player_endpoint)
+        if response.status_code != 200:
+            msg = "Received HTTP status {} when listing players.".format(
+                response.status_code
+            )
+            raise APIException(msg)
+        data = response.json()
+        while True:
+            for player in data["results"]:
+                player["debut"] = datetime.strptime(player["debut"], "%Y-%m-%d").date()
+                yield player
+            next_url = data["next"]
+            if next_url is None:
+                break
+            response = self._session.get(url=next_url)
+            data = response.json()
