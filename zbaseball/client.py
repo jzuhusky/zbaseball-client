@@ -1,4 +1,4 @@
-import json
+from datetime import datetime
 
 import requests
 
@@ -7,6 +7,7 @@ from .exceptions import (
     GameNotFoundException,
     LoginError,
     PaymentRequiredException,
+    PlayerNotFoundException,
 )
 
 
@@ -21,9 +22,7 @@ class ZBaseballDataClient(object):
         self._password = password
         self._token = None
         self._session = requests.Session()
-        self._session.headers.update({
-            "Accept": "application/json",
-        })
+        self._session.headers.update({"Accept": "application/json"})
         if not anon_user:
             self._login()
 
@@ -127,3 +126,21 @@ class ZBaseballDataClient(object):
             next_url = data["next"]
             response = self._session.get(url=next_url)
             data = response.json()
+
+    def get_player(self, retro_id):
+        """Get some basic details about a player"""
+        player_endpoint = self.API_URL + "/api/v1/players/{}/".format(retro_id)
+        response = self._session.get(url=player_endpoint)
+        if response.status_code == 404:
+            msg = "Player with retro-id={} not found.".format(retro_id)
+            raise PlayerNotFoundException(msg)
+        elif response.status_code != 200:
+            msg = "Received HTTP status {} when fetching player w/ retro-id={}".format(
+                response.status_code, retro_id
+            )
+            raise APIException(msg)
+        player_data = response.json()
+        player_data["debut"] = datetime.strptime(
+            player_data["debut"], "%Y-%m-%d"
+        ).date()
+        return player_data
