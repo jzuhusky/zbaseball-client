@@ -53,7 +53,9 @@ class ZBaseballDataClient(object):
             game_id: str, the unique identifier for a particular game. E.g. "NYA192104130"
 
         Returns:
-            A dict with details about that particular game.
+            A dict with details about that particular game. Fields including but not limited
+            to: time, attendance, umpires, winning pitcher, losing pitcher, game site,
+            weather, wind dir, temperature, game duration, date and a few more.
         """
         game_endpoint = self.API_URL + "/api/v1/games/{}/".format(game_id)
         response = self._session.get(url=game_endpoint)
