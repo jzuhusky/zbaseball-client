@@ -1,4 +1,3 @@
-from functools import partial
 import json
 
 import requests
@@ -17,29 +16,20 @@ class ZBaseballClient(object):
         self._username = username
         self._password = password
         self._token = None
-
-    def _request(self, method="GET"):
-        """Prebuild generic get requests for API endpoints"""
-        headers = {"Content-Type": "application/json"}
-        if self._token:
-            headers.update({"Authorization": "Token {}".format(self._token)})
-        if method == "GET":
-            return partial(requests.get, headers=headers)
-        elif method == "POST":
-            return partial(requests.post, headers=headers)
-        else:
-            msg = "method: {} not a supported HTTP/HTTPS method for prebuilt requests"
-            raise ValueError(msg.format(method))
+        self._session = requests.Session()
+        self._session.headers.update({"Content-Type": "application/json"})
+        self._login()
 
     def _login(self):
         """Use credentials to receive a new api token"""
         login_endpoint = self.API_URL + "/api/auth/login/"
-        response = self._request(method="POST")(
+        response = self._session.post(
             url=login_endpoint,
             data=json.dumps({"username": self._username, "password": self._password}),
         )
         if response.status_code == 200:
-            self._token = response.json()["token"]
+            token = response.json()["token"]
+            self._session.headers.update({"Authorization": "Token {}".format(token)})
         else:
             print(response.__dict__)
             msg = response.json()["msg"]
@@ -48,15 +38,20 @@ class ZBaseballClient(object):
     def _logout(self):
         """Indicate to the API we are done with our current token"""
         login_endpoint = self.API_URL + "/api/auth/logout/"
-        response = self.__request("POST")(url=login_endpoint)
-        self._token = None
+        response = self._session.post(url=login_endpoint)
+        del self._session.headers["Authorization"]
 
     def get_game(self, game_id):
-        """Retrieve data for a specific game"""
-        if self._token is None:
-            self._login()
+        """Retrieve data for a specific game
+
+        Args:
+            game_id: str, the unique identifier for a particular game. E.g. "NYA192104130"
+
+        Returns:
+            A dict with details about that particular game.
+        """
         game_endpoint = self.API_URL + "/api/v1/games/{}/".format(game_id)
-        response = self._request()(url=game_endpoint)
+        response = self._session.get(url=game_endpoint)
         if response.status_code != 200:
             raise Exception()
         return response.json()
@@ -87,14 +82,13 @@ class ZBaseballClient(object):
             a team can be found using the teams API or the "list_teams" client method.
         """
         games_endpoint = self.API_URL + "/api/v1/games/"
-        response = self._request()(url=games_endpoint)
+        response = self._session.get(url=games_endpoint)
         if response.status_code != 200:
             raise Exception()
         data = response.json()
         while len(data["results"]) > 0:
-            print(len(data["results"]))
             for game in data["results"]:
                 yield game
             next_url = data["next"]
-            response = self._request()(url=next_url)
+            response = self._session.get(url=next_url)
             data = response.json()
