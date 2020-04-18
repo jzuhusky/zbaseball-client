@@ -26,6 +26,14 @@ class ZBaseballDataClient(object):
         if not anon_user:
             self._login()
 
+    def _get(self, *args, **kwargs):
+        """Get wrapper to catch and retry all HTTP 401s (token may be stale)"""
+        response = self._session.get(*args, **kwargs)
+        if response.status_code == 401:
+            self._login()
+            response = self._session.get(*args, **kwargs)
+        return response
+
     def _login(self):
         """Use credentials to receive a new api token"""
         login_endpoint = self.API_URL + "/api/auth/login/"
@@ -58,7 +66,7 @@ class ZBaseballDataClient(object):
             weather, wind dir, temperature, game duration, date and a few more.
         """
         game_endpoint = self.API_URL + "/api/v1/games/{}/".format(game_id)
-        response = self._session.get(url=game_endpoint)
+        response = self._get(url=game_endpoint)
         if response.status_code == 404:
             raise GameNotFoundException(response.json()["detail"])
         elif response.status_code != 200:
@@ -71,7 +79,7 @@ class ZBaseballDataClient(object):
     def list_game_events(self, game_id):
         """Get a list of play-by-play events for a specific game"""
         game_endpoint = self.API_URL + "/api/v1/games/{}/events/".format(game_id)
-        response = self._session.get(url=game_endpoint)
+        response = self._get(url=game_endpoint)
         if response.status_code == 404:
             raise GameNotFoundException(response.json()["detail"])
         elif response.status_code == 403:
@@ -118,11 +126,14 @@ class ZBaseballDataClient(object):
         if len(filters) > 0:
             games_endpoint += "?" + "&".join(filters)
 
-        response = self._session.get(url=games_endpoint)
+        response = self._get(url=games_endpoint)
         if response.status_code != 200:
-            raise Exception()
+            msg = "Received HTTP status {} when listing games".format(
+                response.status_code
+            )
+            raise APIException(msg)
         data = response.json()
-        while True:
+        while len(data["results"]) > 0:
             for game in data["results"]:
                 yield game
             next_url = data["next"]
@@ -134,7 +145,7 @@ class ZBaseballDataClient(object):
     def get_player(self, retro_id):
         """Get some basic details about a player"""
         player_endpoint = self.API_URL + "/api/v1/players/{}/".format(retro_id)
-        response = self._session.get(url=player_endpoint)
+        response = self._get(url=player_endpoint)
         if response.status_code == 404:
             msg = "Player with retro-id={} not found.".format(retro_id)
             raise PlayerNotFoundException(msg)
@@ -166,14 +177,14 @@ class ZBaseballDataClient(object):
             search.replace(" ", "%20")
             player_endpoint += "?search={}".format(search)
 
-        response = self._session.get(url=player_endpoint)
+        response = self._get(url=player_endpoint)
         if response.status_code != 200:
             msg = "Received HTTP status {} when listing players.".format(
                 response.status_code
             )
             raise APIException(msg)
         data = response.json()
-        while True:
+        while len(data["results"]) > 0:
             for player in data["results"]:
                 player["debut"] = datetime.strptime(player["debut"], "%Y-%m-%d").date()
                 yield player
