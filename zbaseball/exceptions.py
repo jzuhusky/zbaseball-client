@@ -10,6 +10,9 @@ class UnauthorizedException(Exception):
     pass
 
 
+class TooManyRequestsException(Exception):
+    pass
+
 class GameNotFoundException(Exception):
     pass
 

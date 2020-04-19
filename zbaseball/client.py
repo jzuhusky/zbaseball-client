@@ -8,6 +8,7 @@ from .exceptions import (
     LoginError,
     PaymentRequiredException,
     PlayerNotFoundException,
+    TooManyRequestsException,
 )
 
 
@@ -32,6 +33,9 @@ class ZBaseballDataClient(object):
         if response.status_code == 401:
             self._login()
             response = self._session.get(*args, **kwargs)
+        elif response.status_code == 429:
+            msg = "API query rate exceeded"
+            raise TooManyRequestsException(msg)
         return response
 
     def _login(self):
@@ -139,7 +143,7 @@ class ZBaseballDataClient(object):
             next_url = data["next"]
             if next_url is None:
                 break
-            response = self._session.get(url=next_url)
+            response = self._get(url=next_url)
             data = response.json()
 
     def get_player(self, retro_id):
@@ -191,5 +195,5 @@ class ZBaseballDataClient(object):
             next_url = data["next"]
             if next_url is None:
                 break
-            response = self._session.get(url=next_url)
+            response = self._get(url=next_url)
             data = response.json()
