@@ -15,7 +15,7 @@ from .exceptions import (
 class ZBaseballDataClient(object):
 
     # TODO(joe): make this point to the actual domain
-    API_URL = "http://localhost:8000"
+    API_URL = "http://localhost:8000/"
 
     def __init__(self, username=None, password=None, anon_user=False):
         """Init a client, anon users are allowed, but request rate is throttled server side"""
@@ -39,7 +39,7 @@ class ZBaseballDataClient(object):
         return response
 
     def _login(self):
-        """Use credentials to receive a new api token"""
+        """Use credentials to grab a new api token"""
         login_endpoint = self.API_URL + "/api/auth/login/"
         response = self._session.post(
             url=login_endpoint,
@@ -197,3 +197,53 @@ class ZBaseballDataClient(object):
                 break
             response = self._get(url=next_url)
             data = response.json()
+
+    def list_parks(self, *args, **kwargs):
+        raise NotImplementedError()
+
+    def get_park(self, park_id):
+        raise NotImplementedError()
+
+    def list_teams(self, *args, **kwargs):
+        raise NotImplementedError()
+
+    def get_team(self, team_id):
+        raise NotImplementedError()
+
+    def get_lineup(self, game_id: str):
+        """Return a list of lineup Objects for a game"""
+        raise NotImplementedError()
+
+    def list_player_events(
+        self, retro_id: str, start_date: str = None, end_date: str = None
+    ):
+        """List paginated events for a player
+
+        The API exposes an endpoint to filter play-by-play events by player. All events are
+        returned for a specific player, regardless of whether the player was the hitter or the pitcher.
+        Therefore, the user should be careful to understand this point!
+
+        A user may also filter based on a date window, i.e. return all events within this
+        range of dates, or if only a start_date or end_date is supplied, the events will be
+        bounded by those respective dates.
+
+        Args:
+            retro_id: str, unique retrosheet ID of the player events should be returned for.
+            start_date: str, YYYY-MM-DD string to return events after
+            end_date: str, YYYY-MM-DD string to return events before
+
+        Returns:
+            a generator of tuples, which have the form:
+            {
+                "game_id": "HOU201805010",
+                "date": "2018-05-01",
+                "hitter_retro_id": "judga001",
+                "pitcher_retro_id": "verlj001",
+                "pitch_sequence": "F1*BBCS",
+                "event_description": "K",
+                "count_on_play": "22",
+                "inning": 1,
+                "event_count": 1
+            }
+        """
+        raise NotImplementedError()

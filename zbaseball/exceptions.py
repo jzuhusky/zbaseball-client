@@ -13,6 +13,7 @@ class UnauthorizedException(Exception):
 class TooManyRequestsException(Exception):
     pass
 
+
 class GameNotFoundException(Exception):
     pass
 
