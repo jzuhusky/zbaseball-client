@@ -78,7 +78,9 @@ class ZBaseballDataClient(object):
                 response.status_code, game_id
             )
             raise APIException(msg)
-        return response.json()
+        game = response.json()
+        game["date"] = datetime.strptime(game["date"], "%Y-%m-%d").date()
+        return game
 
     def list_game_events(self, game_id):
         """Get a list of play-by-play events for a specific game"""
