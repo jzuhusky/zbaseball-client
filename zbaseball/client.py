@@ -9,6 +9,7 @@ from .exceptions import (
     PaymentRequiredException,
     PlayerNotFoundException,
     TooManyRequestsException,
+    TeamNotFoundException,
 )
 
 
@@ -209,8 +210,19 @@ class ZBaseballDataClient(object):
     def list_teams(self, *args, **kwargs):
         raise NotImplementedError()
 
-    def get_team(self, team_id):
-        raise NotImplementedError()
+    def get_team(self, int_team_id: int):
+        """Get details about a team"""
+        team_endpoint = self.API_URL + "/api/v1/teams/{}/".format(int_team_id)
+        response = self._get(team_endpoint)
+        if response.status_code == 404:
+            msg = "Team with ID: {} not found".format(int_team_id)
+            raise TeamNotFoundException(msg)
+        elif response.status_code != 200:
+            msg = "Received HTTP status {} when fetching team with id: {}".format(
+                response.status_code, int_team_id
+            )
+            raise APIException(msg)
+        return response.json()
 
     def get_lineup(self, game_id: str):
         """Return a list of lineup Objects for a game"""
