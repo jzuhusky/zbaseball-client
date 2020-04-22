@@ -98,7 +98,13 @@ class ZBaseballDataClient(object):
             raise APIException(msg)
         return response.json()
 
-    def list_games(self, year=None, team_id=None):
+    def list_games(
+        self,
+        year: int = None,
+        team_id: str = None,
+        start_date: str = None,
+        end_date: str = None,
+    ):
         """List games & allow some filters
 
         Args:
@@ -109,6 +115,8 @@ class ZBaseballDataClient(object):
                      NB! 3 Character team-id's are NOT neccessarily unique! Specifically, for
                      MIL and HOU, there are 2 "teams" with each of those ID's. Generally, this
                      happens when a particular team switches leagues from AL to NL or vice versa.
+            start_date: str, e.g. 2019-01-01 only return games after this date
+            end_date: str, only return games before this date
 
         Returns:
             a generator of dicts, such that each dict has some simple facts about each game.
@@ -128,13 +136,20 @@ class ZBaseballDataClient(object):
             filters.append("year={}".format(year))
         if team_id:
             filters.append("team-id={}".format(team_id))
+        if start_date:
+            filters.append("start-date={}".format(start_date))
+        if end_date:
+            filters.append("end-date={}".format(end_date))
 
         games_endpoint = self.API_URL + "/api/v1/games/"
         if len(filters) > 0:
             games_endpoint += "?" + "&".join(filters)
 
         response = self._get(url=games_endpoint)
-        if response.status_code != 200:
+        if response.status_code == 400:
+            msg = response.json()["detail"]
+            raise APIException(msg)
+        elif response.status_code != 200:
             msg = "Received HTTP status {} when listing games".format(
                 response.status_code
             )
