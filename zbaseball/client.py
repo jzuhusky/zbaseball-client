@@ -207,8 +207,41 @@ class ZBaseballDataClient(object):
     def get_park(self, park_id):
         raise NotImplementedError()
 
-    def list_teams(self, *args, **kwargs):
-        raise NotImplementedError()
+    def list_teams(self, search: str = None, only_active: bool = False):
+        """List all teams
+
+        Args:
+            search: str, search parameter wHich returns teams based on their "nickname"
+                         city or string team-id (e.g. NYA). Matches exactly to city and team-id,
+                         of partially to nick-name
+            active: bool, only return teams that still exist. Defaults to false
+
+        Returns:
+            generator of team-object/dicts that match search criteria.
+        """
+        if only_active:
+            params = "?only-active=1"
+        else:
+            params = "?only-active=0"
+        if search is not None:
+            params += "&search={}".format(search)
+        team_endpoint = self.API_URL + "/api/v1/teams/" + params
+        response = self._get(team_endpoint)
+        if response.status_code != 200:
+            msg = "Received HTTP status {} when listing teams".format(
+                response.status_code
+            )
+            raise APIException(msg)
+
+        data = response.json()
+        while len(data["results"]) > 0:
+            for team in data["results"]:
+                yield team
+            next_url = data["next"]
+            if next_url is None:
+                break
+            response = self._get(url=next_url)
+            data = response.json()
 
     def get_team(self, int_team_id: int):
         """Get details about a team"""
