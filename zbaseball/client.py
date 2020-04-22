@@ -15,7 +15,7 @@ from .exceptions import (
 class ZBaseballDataClient(object):
 
     # TODO(joe): make this point to the actual domain
-    API_URL = "http://localhost:8000/"
+    API_URL = "http://localhost:8000"
 
     def __init__(self, username=None, password=None, anon_user=False):
         """Init a client, anon users are allowed, but request rate is throttled server side"""
@@ -246,4 +246,33 @@ class ZBaseballDataClient(object):
                 "event_count": 1
             }
         """
-        raise NotImplementedError()
+        filters = []
+        if start_date:
+            filters.append("start-date=" + start_date)
+        if end_date:
+            filters.append("end-date=" + end_date)
+
+        player_events_endpoint = self.API_URL + "/api/v1/players/{}/events/".format(
+            retro_id
+        )
+        if filters:
+            player_events_endpoint += "?" + "&".join(filters)
+
+        # TODO(joey): The code below is VERY similar to code in other places. Simplify? DRY?
+        response = self._get(url=player_events_endpoint)
+        if response.status_code != 200:
+            msg = "Received HTTP status {} when listing events for player: {}".format(
+                response.status_code, retro_id
+            )
+            raise APIException(msg)
+
+        data = response.json()
+        while len(data["results"]) > 0:
+            for event in data["results"]:
+                event["date"] = datetime.strptime(event["date"], "%Y-%m-%d").date()
+                yield event
+            next_url = data["next"]
+            if next_url is None:
+                break
+            response = self._get(url=next_url)
+            data = response.json()
