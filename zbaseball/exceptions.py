@@ -18,6 +18,10 @@ class GameNotFoundException(Exception):
     pass
 
 
+class ParkNotFoundException(Exception):
+    pass
+
+
 class TeamNotFoundException(Exception):
     pass
 

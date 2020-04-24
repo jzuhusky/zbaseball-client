@@ -10,6 +10,7 @@ from .exceptions import (
     PlayerNotFoundException,
     TooManyRequestsException,
     TeamNotFoundException,
+    ParkNotFoundException,
 )
 
 
@@ -254,7 +255,26 @@ class ZBaseballDataClient(object):
             data = response.json()
 
     def get_park(self, park_id):
-        raise NotImplementedError()
+        """Get a specific park object"""
+        park_endpoint = self.API_URL + "/api/v1/parks/{}".format(park_id)
+        response = self._get(url=park_endpoint)
+        if response.status_code == 404:
+            msg = "Park with park-id={} not found.".format(park_id)
+            raise ParkNotFoundException(msg)
+        elif response.status_code != 200:
+            msg = "Received HTTP status {} when fetching park w/ park-id={}".format(
+                response.status_code, park_id
+            )
+            raise APIException(msg)
+        park_data = response.json()
+        park_data["start_date"] = datetime.strptime(
+            park_data["start_date"], "%Y-%m-%d"
+        ).date()
+        if park_data["end_date"] is not None:
+            park_data["end_date"] = datetime.strptime(
+                park_data["end_date"], "%Y-%m-%d"
+            ).date()
+        return park_data
 
     def list_teams(self, search: str = None, only_active: bool = False):
         """List all teams
