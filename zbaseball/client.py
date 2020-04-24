@@ -18,15 +18,12 @@ class ZBaseballDataClient(object):
     # TODO(joe): make this point to the actual domain
     API_URL = "http://localhost:8000"
 
-    def __init__(self, username=None, password=None, anon_user=False):
-        """Init a client, anon users are allowed, but request rate is throttled server side"""
+    def __init__(self, username=None, password=None):
         self._username = username
         self._password = password
         self._token = None
         self._session = requests.Session()
         self._session.headers.update({"Accept": "application/json"})
-        if not anon_user:
-            self._login()
 
     def _get(self, *args, **kwargs):
         """Get wrapper to catch and retry all HTTP 401s (token may be stale)"""
@@ -216,8 +213,44 @@ class ZBaseballDataClient(object):
             response = self._get(url=next_url)
             data = response.json()
 
-    def list_parks(self, *args, **kwargs):
-        raise NotImplementedError()
+    def list_parks(self, city=None, state=None, league=None):
+        """List ballparks known to the retrosheet universe"""
+        query_params = []
+        if city:
+            query_params.append("city={}".format(city))
+        if state:
+            query_params.append("state={}".format(state))
+        if league:
+            query_params.append("league={}".format(city))
+
+        if len(query_params) > 0:
+            query_string = "?" + "&".join(query_params)
+        else:
+            query_string = ""
+
+        parks_endpoint = self.API_URL + "/api/v1/parks/" + query_string
+        response = self._get(parks_endpoint)
+        if response.status_code != 200:
+            msg = "Received HTTP status {} when listing parks".format(
+                response.status_code
+            )
+            raise APIException(msg)
+        data = response.json()
+        while len(data["results"]) > 0:
+            for park in data["results"]:
+                park["start_date"] = datetime.strptime(
+                    park["start_date"], "%Y-%m-%d"
+                ).date()
+                if park["end_date"] is not None:
+                    park["end_date"] = datetime.strptime(
+                        park["end_date"], "%Y-%m-%d"
+                    ).date()
+                yield park
+            next_url = data["next"]
+            if next_url is None:
+                break
+            response = self._get(url=next_url)
+            data = response.json()
 
     def get_park(self, park_id):
         raise NotImplementedError()
