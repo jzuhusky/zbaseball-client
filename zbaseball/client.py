@@ -24,6 +24,7 @@ class ZBaseballDataClient(object):
         self._token = None
         self._session = requests.Session()
         self._session.headers.update({"Accept": "application/json"})
+        self._login()
 
     def _get(self, *args, **kwargs):
         """Get wrapper to catch and retry all HTTP 401s (token may be stale)"""
