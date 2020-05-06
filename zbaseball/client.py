@@ -2,8 +2,10 @@ from datetime import datetime
 
 import requests
 
+from .constants import GAME_TYPES
 from .exceptions import (
     APIException,
+    ClientException,
     GameNotFoundException,
     LoginError,
     PaymentRequiredException,
@@ -103,6 +105,7 @@ class ZBaseballDataClient(object):
         team_id: str = None,
         start_date: str = None,
         end_date: str = None,
+        game_type: str = None,
     ):
         """List games & allow some filters
 
@@ -116,6 +119,9 @@ class ZBaseballDataClient(object):
                      happens when a particular team switches leagues from AL to NL or vice versa.
             start_date: str, e.g. 2019-01-01 only return games after this date
             end_date: str, only return games before this date
+            game_type: str, filter based on regular season games, postseason, allstar etc.
+                       SEE constants.py for the full list of options. Use POST for only postseason
+                       games, REG for only regular season games, None for all games.
 
         Returns:
             a generator of dicts, such that each dict has some simple facts about each game.
@@ -139,6 +145,11 @@ class ZBaseballDataClient(object):
             filters.append("start-date={}".format(start_date))
         if end_date:
             filters.append("end-date={}".format(end_date))
+        if game_type:
+            if game_type != "POST" and game_type not in GAME_TYPES:
+                msg = "game_type must be 'POST' or one of {}".format(GAME_TYPES)
+                raise ClientException(msg)
+            filters.append("game-type={}".format(game_type))
 
         games_endpoint = self.API_URL + "/api/v1/games/"
         if len(filters) > 0:

@@ -6,6 +6,10 @@ class APIException(Exception):
     pass
 
 
+class ClientException(Exception):
+    pass
+
+
 class UnauthorizedException(Exception):
     pass
 
