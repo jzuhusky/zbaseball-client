@@ -84,7 +84,7 @@ class ZBaseballDataClient(object):
         game["date"] = datetime.strptime(game["date"], "%Y-%m-%d").date()
         return game
 
-    def list_game_events(self, game_id):
+    def get_game_events(self, game_id):
         """Get a list of play-by-play events for a specific game"""
         game_endpoint = self.API_URL + "/api/v1/games/{}/events/".format(game_id)
         response = self._get(url=game_endpoint)
@@ -99,7 +99,7 @@ class ZBaseballDataClient(object):
             raise APIException(msg)
         return response.json()
 
-    def list_games(
+    def get_games(
         self,
         year: int = None,
         team_id: str = None,
@@ -107,7 +107,7 @@ class ZBaseballDataClient(object):
         end_date: str = None,
         game_type: str = None,
     ):
-        """List games & allow some filters
+        """Get games & allow some filters
 
         Args:
             year: int or None, you may filter games by year (or season if you prefer).
@@ -134,7 +134,7 @@ class ZBaseballDataClient(object):
                 "away_team": 98
             }
             "home_team" and "away_team" are the UNIQUE team identifiers. Details about
-            a team can be found using the teams API or the "list_teams" client method.
+            a team can be found using the teams API or the "get_teams" client method.
         """
         filters = []
         if year:
@@ -160,7 +160,7 @@ class ZBaseballDataClient(object):
             msg = response.json()["detail"]
             raise APIException(msg)
         elif response.status_code != 200:
-            msg = "Received HTTP status {} when listing games".format(
+            msg = "Received HTTP status {} when fetching games".format(
                 response.status_code
             )
             raise APIException(msg)
@@ -192,8 +192,8 @@ class ZBaseballDataClient(object):
         ).date()
         return player_data
 
-    def list_players(self, search=None):
-        """List players
+    def get_players(self, search=None):
+        """Get players, with some searching capacity
 
         Args:
             search: str | None, an optional parameter that you can search for players
@@ -211,7 +211,7 @@ class ZBaseballDataClient(object):
 
         response = self._get(url=player_endpoint)
         if response.status_code != 200:
-            msg = "Received HTTP status {} when listing players.".format(
+            msg = "Received HTTP status {} when fetching players.".format(
                 response.status_code
             )
             raise APIException(msg)
@@ -226,8 +226,8 @@ class ZBaseballDataClient(object):
             response = self._get(url=next_url)
             data = response.json()
 
-    def list_parks(self, city=None, state=None, league=None):
-        """List ballparks known to the retrosheet universe"""
+    def get_parks(self, city=None, state=None, league=None):
+        """Get gen of ballparks known to the retrosheet universe"""
         query_params = []
         if city:
             query_params.append("city={}".format(city))
@@ -244,7 +244,7 @@ class ZBaseballDataClient(object):
         parks_endpoint = self.API_URL + "/api/v1/parks/" + query_string
         response = self._get(parks_endpoint)
         if response.status_code != 200:
-            msg = "Received HTTP status {} when listing parks".format(
+            msg = "Received HTTP status {} when fetching parks".format(
                 response.status_code
             )
             raise APIException(msg)
@@ -287,11 +287,11 @@ class ZBaseballDataClient(object):
             ).date()
         return park_data
 
-    def list_teams(self, search: str = None, only_active: bool = False):
-        """List all teams
+    def get_teams(self, search: str = None, only_active: bool = False):
+        """Get a generator of teams
 
         Args:
-            search: str, search parameter wHich returns teams based on their "nickname"
+            search: str, search parameter which returns teams based on their "nickname"
                          city or string team-id (e.g. NYA). Matches exactly to city and team-id,
                          of partially to nick-name
             active: bool, only return teams that still exist. Defaults to false
@@ -308,7 +308,7 @@ class ZBaseballDataClient(object):
         team_endpoint = self.API_URL + "/api/v1/teams/" + params
         response = self._get(team_endpoint)
         if response.status_code != 200:
-            msg = "Received HTTP status {} when listing teams".format(
+            msg = "Received HTTP status {} when fetching teams".format(
                 response.status_code
             )
             raise APIException(msg)
@@ -341,10 +341,10 @@ class ZBaseballDataClient(object):
         """Return a list of lineup Objects for a game"""
         raise NotImplementedError()
 
-    def list_player_events(
+    def get_player_events(
         self, retro_id: str, start_date: str = None, end_date: str = None
     ):
-        """List paginated events for a player
+        """Get paginated events for a player
 
         The API exposes an endpoint to filter play-by-play events by player. All events are
         returned for a specific player, regardless of whether the player was the hitter or the pitcher.
@@ -388,7 +388,7 @@ class ZBaseballDataClient(object):
         # TODO(joey): The code below is VERY similar to code in other places. Simplify? DRY?
         response = self._get(url=player_events_endpoint)
         if response.status_code != 200:
-            msg = "Received HTTP status {} when listing events for player: {}".format(
+            msg = "Received HTTP status {} when fetching events for player: {}".format(
                 response.status_code, retro_id
             )
             raise APIException(msg)
