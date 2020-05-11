@@ -38,6 +38,9 @@ class ZBaseballDataClient(object):
         elif response.status_code == 429:
             msg = "API query rate exceeded"
             raise TooManyRequestsException(msg)
+        elif response.status_code == 402:
+            msg = response.json()["detail"]
+            raise PaymentRequiredException(msg)
         return response
 
     def _login(self):
@@ -90,8 +93,6 @@ class ZBaseballDataClient(object):
         response = self._get(url=game_endpoint)
         if response.status_code == 404:
             raise GameNotFoundException(response.json()["detail"])
-        elif response.status_code == 403:
-            raise PaymentRequiredException(response.json()["detail"])
         elif response.status_code != 200:
             msg = "Received HTTP status {} when fetching events for game_id={}".format(
                 response.status_code, game_id
@@ -385,7 +386,6 @@ class ZBaseballDataClient(object):
         if filters:
             player_events_endpoint += "?" + "&".join(filters)
 
-        # TODO(joey): The code below is VERY similar to code in other places. Simplify? DRY?
         response = self._get(url=player_events_endpoint)
         if response.status_code != 200:
             msg = "Received HTTP status {} when fetching events for player: {}".format(
