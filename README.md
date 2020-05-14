@@ -1,5 +1,7 @@
 # zbaseball-client
-A python client for the [zBaseballData](https://www.zbaseballdata.com/) API
+A python client for the [zBaseballData](https://www.zbaseballdata.com/) API.
+
+*"Retrosheet Data as a Service"*
 
 ### Note
 This is a simple client and still being developed. It might have bugs, and we don't have a lot of tests. This will change. 
