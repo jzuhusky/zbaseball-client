@@ -1,4 +1,5 @@
 from datetime import datetime
+from typing import List
 
 import requests
 
@@ -17,14 +18,13 @@ from .exceptions import (
 
 
 class ZBaseballDataClient(object):
-
-    # TODO(joe): make this point to the actual domain
-    API_URL = "http://localhost:8000"
-
-    def __init__(self, username=None, password=None):
+    def __init__(
+        self, username=None, password=None, api_url="https://www.zbaseballdata.com"
+    ):
         self._username = username
         self._password = password
         self._token = None
+        self._api_url = api_url
         self._session = requests.Session()
         self._session.headers.update({"Accept": "application/json"})
         self._login()
@@ -45,7 +45,7 @@ class ZBaseballDataClient(object):
 
     def _login(self):
         """Use credentials to grab a new api token"""
-        login_endpoint = self.API_URL + "/api/auth/login/"
+        login_endpoint = self._api_url + "/api/auth/login/"
         response = self._session.post(
             url=login_endpoint,
             data={"username": self._username, "password": self._password},
@@ -59,7 +59,7 @@ class ZBaseballDataClient(object):
 
     def _logout(self):
         """Indicate to the API we are done with our current token"""
-        login_endpoint = self.API_URL + "/api/auth/logout/"
+        login_endpoint = self._api_url + "/api/auth/logout/"
         self._session.post(url=login_endpoint)
         del self._session.headers["Authorization"]
 
@@ -74,7 +74,7 @@ class ZBaseballDataClient(object):
             to: time, attendance, umpires, winning pitcher, losing pitcher, game site,
             weather, wind dir, temperature, game duration, date and a few more.
         """
-        game_endpoint = self.API_URL + "/api/v1/games/{}/".format(game_id)
+        game_endpoint = self._api_url + "/api/v1/games/{}/".format(game_id)
         response = self._get(url=game_endpoint)
         if response.status_code == 404:
             raise GameNotFoundException(response.json()["detail"])
@@ -89,7 +89,7 @@ class ZBaseballDataClient(object):
 
     def get_game_events(self, game_id):
         """Get a list of play-by-play events for a specific game"""
-        game_endpoint = self.API_URL + "/api/v1/games/{}/events/".format(game_id)
+        game_endpoint = self._api_url + "/api/v1/games/{}/events/".format(game_id)
         response = self._get(url=game_endpoint)
         if response.status_code == 404:
             raise GameNotFoundException(response.json()["detail"])
@@ -152,7 +152,7 @@ class ZBaseballDataClient(object):
                 raise ClientException(msg)
             filters.append("game-type={}".format(game_type))
 
-        games_endpoint = self.API_URL + "/api/v1/games/"
+        games_endpoint = self._api_url + "/api/v1/games/"
         if len(filters) > 0:
             games_endpoint += "?" + "&".join(filters)
 
@@ -177,7 +177,7 @@ class ZBaseballDataClient(object):
 
     def get_player(self, retro_id):
         """Get some basic details about a player"""
-        player_endpoint = self.API_URL + "/api/v1/players/{}/".format(retro_id)
+        player_endpoint = self._api_url + "/api/v1/players/{}/".format(retro_id)
         response = self._get(url=player_endpoint)
         if response.status_code == 404:
             msg = "Player with retro-id={} not found.".format(retro_id)
@@ -205,7 +205,7 @@ class ZBaseballDataClient(object):
             a generator of player-dict/objects, where each dict has first-name, last-name
             unique "retro_id" and the player's MLB debut.
         """
-        player_endpoint = self.API_URL + "/api/v1/players/"
+        player_endpoint = self._api_url + "/api/v1/players/"
         if search:
             search.replace(" ", "%20")
             player_endpoint += "?search={}".format(search)
@@ -242,7 +242,7 @@ class ZBaseballDataClient(object):
         else:
             query_string = ""
 
-        parks_endpoint = self.API_URL + "/api/v1/parks/" + query_string
+        parks_endpoint = self._api_url + "/api/v1/parks/" + query_string
         response = self._get(parks_endpoint)
         if response.status_code != 200:
             msg = "Received HTTP status {} when fetching parks".format(
@@ -268,7 +268,7 @@ class ZBaseballDataClient(object):
 
     def get_park(self, park_id):
         """Get a specific park object"""
-        park_endpoint = self.API_URL + "/api/v1/parks/{}".format(park_id)
+        park_endpoint = self._api_url + "/api/v1/parks/{}".format(park_id)
         response = self._get(url=park_endpoint)
         if response.status_code == 404:
             msg = "Park with park-id={} not found.".format(park_id)
@@ -306,7 +306,7 @@ class ZBaseballDataClient(object):
             params = "?only-active=0"
         if search is not None:
             params += "&search={}".format(search)
-        team_endpoint = self.API_URL + "/api/v1/teams/" + params
+        team_endpoint = self._api_url + "/api/v1/teams/" + params
         response = self._get(team_endpoint)
         if response.status_code != 200:
             msg = "Received HTTP status {} when fetching teams".format(
@@ -326,7 +326,7 @@ class ZBaseballDataClient(object):
 
     def get_team(self, int_team_id: int):
         """Get details about a team"""
-        team_endpoint = self.API_URL + "/api/v1/teams/{}/".format(int_team_id)
+        team_endpoint = self._api_url + "/api/v1/teams/{}/".format(int_team_id)
         response = self._get(team_endpoint)
         if response.status_code == 404:
             msg = "Team with ID: {} not found".format(int_team_id)
@@ -337,10 +337,6 @@ class ZBaseballDataClient(object):
             )
             raise APIException(msg)
         return response.json()
-
-    def get_lineup(self, game_id: str):
-        """Return a list of lineup Objects for a game"""
-        raise NotImplementedError()
 
     def get_player_events(
         self, retro_id: str, start_date: str = None, end_date: str = None
@@ -380,7 +376,7 @@ class ZBaseballDataClient(object):
         if end_date:
             filters.append("end-date=" + end_date)
 
-        player_events_endpoint = self.API_URL + "/api/v1/players/{}/events/".format(
+        player_events_endpoint = self._api_url + "/api/v1/players/{}/events/".format(
             retro_id
         )
         if filters:
@@ -403,3 +399,90 @@ class ZBaseballDataClient(object):
                 break
             response = self._get(url=next_url)
             data = response.json()
+
+    def get_batting_stat_split(
+        self,
+        retro_id: str,
+        stats: List[str],
+        agg_by: str,
+        vs_pitcher: str = None,
+        game_type: str = None,
+        pitcher_throw: str = None,
+        start_date: str = None,
+        end_date: str = None,
+        year: int = None,
+    ):
+        """Get batting statistics
+
+        Args:
+            retro_id: str, for whom we want to get statistics, e.g. judga001
+            stats: List[str], one or more of H, AB, PA, etc.... see full list
+                   in constants.py BATTING_STATS
+            agg_by: str, D (day), M (month), DOW(day of week) etc... for full list see
+                    constants.py AGGREGATE_OPTIONS
+            vs_pitcher: str, a retro_id of a player. This will tell the server to return
+                        and aggregate data for when this hitter was facing this pitcher.
+            game_type: str, if None, regular and postseason stats are returned. Options
+                       are REG, POST, ALCS, ALDS, ALWC, WS... etc...
+            pitcher_throw: str, None or "L" or "R"
+            start_date: str, None or YYYY-MM-DD, return after this date.
+            end_date: str, None or YYYY-MM-DD, return data before this date.
+            year: int, None or some year. Only return data for this year.
+
+        Returns:
+            a dictionary of the form: Dict[stat, Dict[aggregate, value].
+            stats = ["HR", "PA"], agg_by="DOW" (day of week) for some player.
+            These values will change if a user is to supply any of the splits (optional parameters)
+            For example:
+            {
+                "HR": {
+                    "fri": 10,
+                    "mon": 5,
+                    "sat": 13,
+                    "sun": 7,
+                    "thu": 4,
+                    "tue": 7,
+                    "wed": 8
+                },
+                "PA": {
+                    "fri": 147,
+                    "mon": 108,
+                    "sat": 162,
+                    "sun": 146,
+                    "thu": 106,
+                    "tue": 143,
+                    "wed": 133
+                }
+            }
+        """
+        stat_query_string = "&" + "&".join(["stat={}".format(s) for s in stats])
+        query_string = (
+            "?hitter_retro_id={retro_id}&agg_by={agg_by}".format(
+                retro_id=retro_id, agg_by=agg_by
+            )
+            + stat_query_string
+        )
+        # Add splits if they're provided
+        if vs_pitcher:
+            query_string += "&vs_pitcher={}".format(vs_pitcher)
+        if game_type:
+            query_string += "&game_type={}".format(game_type)
+        if pitcher_throw:
+            query_string += "&pitcher_throw={}".format(pitcher_throw)
+        if start_date:
+            query_string += "&start_date={}".format(start_date)
+        if end_date:
+            query_string += "&end_date={}".format(end_date)
+        if year:
+            query_string += "&year={}".format(year)
+        stat_split_endpoint = self._api_url + "/api/v1/stats/batting/" + query_string
+        response = self._get(url=stat_split_endpoint)
+        if response.status_code == 400:
+            raise APIException(response.json()["detail"])
+
+        elif response.status_code != 200:
+            msg = "Received HTTP status {} when fetching stat split for: {}".format(
+                response.status_code, retro_id
+            )
+            raise APIException(msg)
+        return response.json()
