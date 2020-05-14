@@ -46,3 +46,8 @@ pprint(players)
   'bat': 'L'}]
 """
 ```
+
+### Example Code
+We have some basic examples on the main site: [https://www.zbaseballdata.com/](https://www.zbaseballdata.com/)
+
+More to come to this readme. 
