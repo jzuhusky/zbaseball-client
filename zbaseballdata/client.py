@@ -23,7 +23,6 @@ class ZBaseballDataClient(object):
     ):
         self._username = username
         self._password = password
-        self._token = None
         self._api_url = api_url
         self._session = requests.Session()
         self._session.headers.update({"Accept": "application/json"})
