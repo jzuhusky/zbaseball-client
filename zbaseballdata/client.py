@@ -44,6 +44,7 @@ class ZBaseballDataClient(object):
 
     def _login(self):
         """Use credentials to grab a new api token"""
+        self._session.headers.pop("Authorization", None)
         login_endpoint = self._api_url + "/api/auth/login/"
         response = self._session.post(
             url=login_endpoint,

@@ -4,7 +4,7 @@ package_name = "zbaseballdata"
 
 setup(
     name=package_name,
-    version="0.0.2",
+    version="0.0.3",
     description="A python client for the zBaseballData API",
     url="https://github.com/jzuhusky/zbaseball-client",
     keywords="client retrosheet python api zbaseballdata baseball data zbaseballdata zbaseball",
