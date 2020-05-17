@@ -1,4 +1,6 @@
 # zbaseball-client
+[![PyPI version](https://badge.fury.io/py/zbaseballdata.svg)](https://badge.fury.io/py/zbaseballdata)
+
 A python client for the [zBaseballData](https://www.zbaseballdata.com/) API.
 
 *"Retrosheet Data as a Service"*
