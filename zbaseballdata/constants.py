@@ -23,6 +23,8 @@ BATTING_STATS = (
     "2B",
     "3B",
     "HR",
+    "RBI",
+    "R",
     "BB",
     "IBB",
     "SO",
@@ -30,6 +32,34 @@ BATTING_STATS = (
     "GIDP",
     "SH",
     "SF",
+    "SB",
+    "CS",
+    "GB",
+    "LD",
+    "PF",
+    "FB",
+)
+
+PITCHING_STATS = (
+    "IP",
+    "G",
+    "BF",
+    "AB",
+    "H",
+    "2B",
+    "3B",
+    "HR",
+    "BB",
+    "IBB",
+    "SO",
+    "ROE",
+    "GIDP",
+    "SH",
+    "SF",
+    "HBP",
+    "ER",
+    "R",
+    "WP",
 )
 
 AGGREGATE_OPTIONS = (
@@ -43,4 +73,6 @@ AGGREGATE_OPTIONS = (
     "DOW",  # by day of the week
     "INN",  # by inning
     "COP",  # by count on play
+    "PARK_NAME",
+    "PARK_ID",
 )

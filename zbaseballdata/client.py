@@ -486,3 +486,71 @@ class ZBaseballDataClient(object):
             )
             raise APIException(msg)
         return response.json()
+
+    def get_lineup(self, game_id):
+        """Get lineup list given a game_id"""
+        lineup_route = self._api_url + "/api/v1/games/{}/lineup/".format(game_id)
+        response = self._get(lineup_route)
+        if response.status_code == 404:
+            msg = "Game with ID: {} not found".format(game_id)
+            raise TeamNotFoundException(msg)
+        elif response.status_code != 200:
+            msg = "Received HTTP status {} when fetching lineup for game: {}".format(
+                response.status_code, game_id
+            )
+            raise APIException(msg)
+        return response.json()
+
+    def get_pitching_stat_split(
+        self,
+        retro_id: str,
+        stats: List[str],
+        agg_by: str = "C",
+        vs_hitter: str = None,
+        game_type: str = None,
+        batter_hand: str = None,
+        year: int = None,
+        start_date: str = None,
+        end_date: str = None,
+    ):
+        """Get pitching stats
+
+        This client method is the fraternal twin of "get_batting_stat_split". It's
+        pretty much the same, and follows the same rule, expect it hits the pitching API.
+
+        For pitching however, there is is another API for what we call "game level" things,
+        I.e. Wins, Starts, Games, Saves, Losses for pitchers.
+
+        This method serves "event level data", i.e. things that can be computed from play
+        by play data.
+        """
+        stat_query_string = "&" + "&".join(["stat={}".format(s) for s in stats])
+        query_string = (
+            "?pitcher_retro_id={retro_id}&agg_by={agg_by}".format(
+                retro_id=retro_id, agg_by=agg_by
+            )
+            + stat_query_string
+        )
+        # Add splits if they're provided
+        if vs_hitter:
+            query_string += "&vs_hitter={}".format(vs_hitter)
+        if game_type:
+            query_string += "&game_type={}".format(game_type)
+        if batter_hand:
+            query_string += "&batter_hand={}".format(batter_hand)
+        if start_date:
+            query_string += "&start_date={}".format(start_date)
+        if end_date:
+            query_string += "&end_date={}".format(end_date)
+        if year:
+            query_string += "&year={}".format(year)
+        stat_split_endpoint = self._api_url + "/api/v1/stats/pitching/" + query_string
+        response = self._get(url=stat_split_endpoint)
+        if response.status_code == 400:
+            raise APIException(response.json()["detail"])
+        elif response.status_code != 200:
+            msg = "Received HTTP status {} when fetching stat split for: {}".format(
+                response.status_code, retro_id
+            )
+            raise APIException(msg)
+        return response.json()
