@@ -48,8 +48,3 @@ pprint(players)
   'bat': 'L'}]
 """
 ```
-
-### Example Code
-
-
-
