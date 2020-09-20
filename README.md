@@ -16,7 +16,7 @@ pip install zbaseballdata
 ```
 3. Initialize a client
 ```python
-from zbaseball.client import ZBaseballDataClient
+from zbaseballdata.client import ZBaseballDataClient
 
 # Supply the credentials you used during the sign-up process
 client = ZBaseballDataClient(username="USERNAME", password="PASSWORD")
@@ -50,6 +50,6 @@ pprint(players)
 ```
 
 ### Example Code
-We have some basic examples on the main site: [https://www.zbaseballdata.com/](https://www.zbaseballdata.com/)
 
-More to come to this readme. 
+
+

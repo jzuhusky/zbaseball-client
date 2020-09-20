@@ -411,6 +411,9 @@ class ZBaseballDataClient(object):
         start_date: str = None,
         end_date: str = None,
         year: int = None,
+        day_or_night: str = None,
+        park_id: str = None,
+        vs_team: str = None,
     ):
         """Get batting statistics
 
@@ -475,6 +478,12 @@ class ZBaseballDataClient(object):
             query_string += "&end_date={}".format(end_date)
         if year:
             query_string += "&year={}".format(year)
+        if day_or_night:
+            query_string += "&day_or_night={}".format(day_or_night)
+        if park_id:
+            query_string += "&park_id={}".format(park_id)
+        if vs_team:
+            query_string += "&vs_team={}".format(vs_team)
         stat_split_endpoint = self._api_url + "/api/v1/stats/batting/" + query_string
         response = self._get(url=stat_split_endpoint)
         if response.status_code == 400:
@@ -516,10 +525,13 @@ class ZBaseballDataClient(object):
         """Get pitching stats
 
         This client method is the fraternal twin of "get_batting_stat_split". It's
-        pretty much the same, and follows the same rule, expect it hits the pitching API.
+        pretty much the same, and follows the same rule, except it hits the pitching API.
 
         For pitching however, there is is another API for what we call "game level" things,
-        I.e. Wins, Starts, Games, Saves, Losses for pitchers.
+        I.e. Wins, Starts, Games, Saves, Losses for pitchers. Naturally, these can't exactly 
+        be broken down by inning, or situations with runners on base, so that data comes 
+        fromm a second, but very similar, API endpoint. At the time of writing, no client method
+        has been implemented for that, but this will change.
 
         This method serves "event level data", i.e. things that can be computed from play
         by play data.
@@ -531,7 +543,7 @@ class ZBaseballDataClient(object):
             )
             + stat_query_string
         )
-        # Add splits if they're provided
+        # Add query filters if they're provided
         if vs_hitter:
             query_string += "&vs_hitter={}".format(vs_hitter)
         if game_type:
