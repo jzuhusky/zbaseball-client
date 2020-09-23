@@ -3,7 +3,13 @@
 
 A python client for the [zBaseballData](https://www.zbaseballdata.com/) API.
 
-*"Retrosheet Data as a Service"*
+## *"Retrosheet Data as a Service"*
+
+## Data Disclaimer
+
+     The information used here was obtained free of
+     charge from and is copyrighted by Retrosheet.  Interested
+     parties may contact Retrosheet at "www.retrosheet.org".
 
 ### Note
 This is a simple client and still being developed. It might have bugs, and we don't have a lot of tests. This will change. 
